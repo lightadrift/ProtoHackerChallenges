@@ -63,7 +63,7 @@ func HandleConnections(conn net.Conn, prefix string) {
 			return
 		}
 		fmt.Printf("request: %s", bytes)
-		line := fmt.Sprintf("%s %s", prefix, bytes)
+		line := string(bytes)
 		fmt.Printf("response: %s", line)
 		conn.Write([]byte(line))
 	}
