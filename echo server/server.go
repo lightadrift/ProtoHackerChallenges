@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -22,8 +21,13 @@ func main() {
 	logger = log.New(logFile, "", log.LstdFlags)
 
 	port := fmt.Sprintf(":%s", os.Args[1])
-	prefix := os.Args[2]
-	allowedIP := "206.189.113.124"
+	// Map of allowed IPs for faster lookup
+	allowedIPsMap := map[string]bool{
+		"206.189.113.124": true,
+		"127.0.0.1":       true,
+		"::1":             true,
+		// Add more IPs as needed
+	}
 
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
@@ -45,7 +49,13 @@ func main() {
 				return
 			}
 			ip, _, err := net.SplitHostPort(strings.TrimSpace(conn.RemoteAddr().String()))
-			if err != nil || ip != allowedIP {
+			if err != nil {
+				fmt.Println("Error splitting host and port:", err)
+				conn.Close()
+				continue
+			}
+			// Check if IP is in the allowed IPs map
+			if !allowedIPsMap[ip] {
 				fmt.Println("Connection from unauthorized IP:", ip)
 				conn.Close()
 				continue
@@ -55,24 +65,16 @@ func main() {
 	}()
 
 	for conn := range connections {
-		go HandleConnections(conn, prefix)
+		go HandleConnections(conn)
 	}
 }
 
-func HandleConnections(conn net.Conn, prefix string) {
+func HandleConnections(conn net.Conn) {
 	defer conn.Close()
-	reader := bufio.NewReader(conn)
-	for {
-		bytes, err := reader.ReadBytes(byte('\n'))
-		if err != nil {
-			if err != io.EOF {
-				fmt.Println("Failed to read data, error:", err)
-			}
-			return
-		}
-		request := fmt.Sprintf("%s", bytes)
-		response := request                                             // Assuming the response is simply echoing the request
-		logger.Printf("Request: %s\nResponse: %s\n", request, response) // Log the request and response
-		conn.Write([]byte(response))
+	_, err := io.Copy(conn, conn)
+	if err != nil {
+		log.Println(err)
 	}
+	fmt.Println("request:")
+
 }
