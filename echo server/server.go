@@ -6,12 +6,14 @@ import (
 	"io"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
 
 	port := fmt.Sprintf(":%s", os.Args[1])
 	prefix := os.Args[2]
+	allowedIP := "206.189.113.124"
 
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
@@ -31,6 +33,12 @@ func main() {
 				fmt.Println("failed to accpet connection, error:", err)
 				close(connections)
 				return
+			}
+			ip, _, err := net.SplitHostPort(strings.TrimSpace(conn.RemoteAddr().String()))
+			if err != nil || ip != allowedIP {
+				fmt.Println("Connection from unauthorized IP:", ip)
+				conn.Close()
+				continue
 			}
 			connections <- conn
 
