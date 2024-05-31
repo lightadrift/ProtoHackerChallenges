@@ -21,12 +21,10 @@ func main() {
 	logger = log.New(logFile, "", log.LstdFlags)
 
 	port := fmt.Sprintf(":%s", os.Args[1])
-	// Map of allowed IPs for faster lookup
 	allowedIPsMap := map[string]bool{
 		"206.189.113.124": true,
 		"127.0.0.1":       true,
 		"::1":             true,
-		// Add more IPs as needed
 	}
 
 	listener, err := net.Listen("tcp", port)
@@ -54,7 +52,6 @@ func main() {
 				conn.Close()
 				continue
 			}
-			// Check if IP is in the allowed IPs map
 			if !allowedIPsMap[ip] {
 				fmt.Println("Connection from unauthorized IP:", ip)
 				conn.Close()
